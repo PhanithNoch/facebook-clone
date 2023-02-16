@@ -17,7 +17,7 @@ class UserAuthController extends Controller
             return response(['user' => auth()->user(), 'access_token' => $token]);
         }
 
-        return response(['message' => 'Invalid Credentials']);
+        return response(['message' => 'Invalid Credentials'], 401);
     }
 
     public function logout()
@@ -28,7 +28,7 @@ class UserAuthController extends Controller
 
         return response(['message' => 'Logged out']);
     }
-    /// register user 
+    /// register user
     public function register(Request $request)
     {
         // dd(request()->getSchemeAndHttpHost());
@@ -41,14 +41,15 @@ class UserAuthController extends Controller
 
         ]);
         /// validate image
-   
+
         $data = $request->all();
 
         /// if user already exists
         if (User::where('email', $data['email'])->exists()) {
-            return response(['message' => 'User already exists']);
+            /// status user already ex
+            return response(['message' => 'User already exists'],);
         }
-        /// upload image 
+        /// upload image
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name = time() . '.' . $image->getClientOriginalExtension();
@@ -68,7 +69,7 @@ class UserAuthController extends Controller
         $user->image = $baseUrlImage.'/'.$data['image'];
         return response(['user' => $user, 'access_token' => $token]);
     }
-    /// update user 
+    /// update user
     public function update(Request $request,$id)
     {
         $data = $request->all();
@@ -78,16 +79,16 @@ class UserAuthController extends Controller
         if (!$user) {
             return response(['message' => 'User not found']);
         }
-        
+
     if($user){
-        /// update user image 
+        /// update user image
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $name = time() . '.' . $image->getClientOriginalExtension();
             $destinationPath = public_path('/images');
             $image->move($destinationPath, $name);
             $data['image'] = $name;
-            
+
             /// remove old image
             $oldImage = public_path('/images/').$user->image;
             if (file_exists($oldImage)) {
@@ -100,12 +101,12 @@ class UserAuthController extends Controller
         $user->image = $baseUrlImage.'/'.$data['image'];
 
         return response(['user' => $user]);
-        
+
     }
 
 
     }
-    
+
     /// delete user
     public function delete()
     {
@@ -114,14 +115,35 @@ class UserAuthController extends Controller
         return response(['message' => 'User deleted']);
     }
 
-    /// get current user logged 
+    /// get current user logged
     public function user()
     {
         return response(['user' => auth()->user()]);
     }
-    /// get all users 
+    /// get all users
     public function getAllUsers(){
         $users = User::all();
         return response()->json(['users' => $users]);
     }
+
+
+    /// upload multiple images
+    public function uploadImages(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'images' => 'required',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+        ]);
+        $images = [];
+        if ($request->hasfile('images')) {
+            foreach ($request->file('images') as $image) {
+                $name = time() . '.' . $image->getClientOriginalExtension();
+                $destinationPath = public_path('/images');
+                $image->move($destinationPath, $name);
+                $images[] = $name;
+            }
+        }
+        return response()->json(['images' => $images]);
+    }
+
 }

@@ -14,14 +14,22 @@ class PostController extends Controller
     public function index()
     {
         /// get posts with likes count and comments count 
-        $posts = Post::withCount('likes')->withCount('comments')->get();
+        $posts = Post::withCount('likes')->withCount('comments')->with('user')->get();
+        /// order date 
+     
         $baseUrlImage = request()->getSchemeAndHttpHost() . '/images';
         foreach ($posts as $post) {
             $post->image = $baseUrlImage . '/' . $post->image;
         }
-        // get first user liked 
+      
         
-
+        foreach($posts as $post){
+            $post['liked'] = $post->likes->contains('user_id', auth()->user()->id);
+            /// get first user liked each posts
+            $post['first_user_liked'] = $post->user()->first();
+        }
+        /// get first user liked post 
+      
 
         return response()->json($posts);
     }
